@@ -120,18 +120,32 @@ export default function App() {
     setSn(snValues);
   }
 
+  // const data = {
+  //   labels: Array.from({ length: Sn.length }, (_, i) => i),
+  //   datasets: [
+  //     {
+  //       label: "Partial Sum S_n",
+  //       data: Sn,
+  //       fill: false,
+  //       borderColor: "blue",
+  //       tension: 0.1,
+  //     },
+  //   ],
+  // };
   const data = {
-    labels: Array.from({ length: Sn.length }, (_, i) => i),
+    labels: Array.from({ length: Sn.length }, (_, i) => i + 1), // Always S₁ to S_N
     datasets: [
       {
-        label: "Partial Sum S_n",
+        label: "Partial Sum Sₙ",
         data: Sn,
-        fill: false,
         borderColor: "blue",
+        backgroundColor: "rgba(0, 0, 255, 0.3)",
+        fill: false,
         tension: 0.1,
       },
     ],
   };
+  
 
   
 
