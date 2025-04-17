@@ -1,16 +1,44 @@
+//To run this code, in the terminal, cd to this path and then run: npm start
+//To exit the server, press Ctrl + C
+//Then open http://localhost:3000 in your browser
+//This code visualizes the partial sums of a series defined by the user.
+//It allows the user to input a series term (a_n), a start index, and the number of terms to sum.
+//It computes the partial sums and displays them in a line chart.
+//It also displays the final partial sum after the computation is complete.
 import React, { useState } from "react";
 import { Line } from "react-chartjs-2";
+// import {
+//   Chart as ChartJS,
+//   LineElement,
+//   CategoryScale,
+//   LinearScale,
+//   PointElement,
+// } from "chart.js";
 import {
   Chart as ChartJS,
   LineElement,
   CategoryScale,
   LinearScale,
   PointElement,
+  Legend,
+  Title,
+  Tooltip,
 } from "chart.js";
+
+
 import { evaluate } from "mathjs";
 
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+// ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
+ChartJS.register(
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Legend,
+  Title,
+  Tooltip
+);
 
 export default function App() {
   const [finalSum, setFinalSum] = useState(null);
@@ -19,6 +47,58 @@ export default function App() {
   const [endIndex, setEndIndex] = useState("infty");
   const [N, setN] = useState(1000);
   const [Sn, setSn] = useState([]);
+  // const options = {
+  //   responsive: true,
+  //   plugins: {
+  //     legend: {
+  //       display: true,
+  //       position: 'top',
+  //       align: 'end',
+  //       labels: {
+  //         font: {
+  //           size: 14,
+  //         },
+  //       },
+  //     },
+  //     title: {
+  //       display: true,
+  //       text: "Partial Sums of the Series",
+  //       font: {
+  //         size: 18,
+  //       },
+  //     },
+  //   },
+  //   layout: {
+  //     padding: {
+  //       top: 20,
+  //     },
+  //   },
+  // };
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
+        align: "end",
+        labels: {
+          font: {
+            size: 14,
+          },
+          usePointStyle: true,
+          pointStyle: "circle", // 👈 switch from square to circle
+        },
+      },
+      title: {
+        display: true,
+        text: "Partial Sums of the Series",
+      },
+    },
+  };
+  
+  
+  
+  
 
   function evaluateSeries() {
     let snValues = [];
@@ -52,6 +132,8 @@ export default function App() {
       },
     ],
   };
+
+  
 
   return (
     <div className="p-6 max-w-xl mx-auto">
@@ -91,7 +173,7 @@ export default function App() {
 
       {Sn.length > 0 && (
         <div className="mt-6">
-          <Line data={data} />
+          <Line data={data} options={options} />
           {finalSum !== null && (
             <div className="mt-4 text-lg">
               Final partial sum \( S_{N} \): <strong>{finalSum.toFixed(6)}</strong>
