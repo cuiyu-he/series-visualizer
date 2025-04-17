@@ -7,12 +7,15 @@ import {
   LinearScale,
   PointElement,
 } from "chart.js";
+import { evaluate } from "mathjs";
+
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
 export default function App() {
-  const [an, setAn] = useState("1/n!");
-  const [startIndex, setStartIndex] = useState(0);
+  const [finalSum, setFinalSum] = useState(null);
+  const [an, setAn] = useState("1/n");
+  const [startIndex, setStartIndex] = useState(1);
   const [endIndex, setEndIndex] = useState("infty");
   const [N, setN] = useState(1000);
   const [Sn, setSn] = useState([]);
@@ -20,10 +23,12 @@ export default function App() {
   function evaluateSeries() {
     let snValues = [];
     let sum = 0;
-    for (let n = 0; n <= N; n++) {
+    for (let n = startIndex; n <= N; n++) {
       try {
-        let expr = an.replace(/n/g, `(${n})`);
-        let term = eval(expr);
+        // let expr = an.replace(/n/g, `(${n})`);
+        // let term = eval(expr);
+        let term = evaluate(an, { n });
+        
         sum += term;
         snValues.push(sum);
       } catch {
@@ -31,6 +36,7 @@ export default function App() {
         return;
       }
     }
+    setFinalSum(sum);
     setSn(snValues);
   }
 
@@ -86,8 +92,14 @@ export default function App() {
       {Sn.length > 0 && (
         <div className="mt-6">
           <Line data={data} />
+          {finalSum !== null && (
+            <div className="mt-4 text-lg">
+              Final partial sum \( S_{N} \): <strong>{finalSum.toFixed(6)}</strong>
+            </div>
+          )}
         </div>
       )}
+
     </div>
   );
 }
