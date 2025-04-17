@@ -52,25 +52,19 @@ export default function App() {
   //   plugins: {
   //     legend: {
   //       display: true,
-  //       position: 'top',
-  //       align: 'end',
+  //       position: "top",
+  //       align: "end",
   //       labels: {
   //         font: {
   //           size: 14,
   //         },
+  //         usePointStyle: true,
+  //         pointStyle: "circle", // 👈 switch from square to circle
   //       },
   //     },
   //     title: {
   //       display: true,
   //       text: "Partial Sums of the Series",
-  //       font: {
-  //         size: 18,
-  //       },
-  //     },
-  //   },
-  //   layout: {
-  //     padding: {
-  //       top: 20,
   //     },
   //   },
   // };
@@ -82,19 +76,33 @@ export default function App() {
         position: "top",
         align: "end",
         labels: {
+          usePointStyle: true,
+          pointStyle: "circle",
           font: {
             size: 14,
           },
-          usePointStyle: true,
-          pointStyle: "circle", // 👈 switch from square to circle
         },
       },
       title: {
         display: true,
         text: "Partial Sums of the Series",
       },
+      tooltip: {
+        callbacks: {
+          title: function (tooltipItems) {
+            // First line (index of sum)
+            const index = tooltipItems[0].dataIndex + 1;
+            return `S_${index}`;
+          },
+          label: function (tooltipItem) {
+            // Second line (value of sum)
+            return `Value: ${tooltipItem.formattedValue}`;
+          },
+        },
+      },
     },
   };
+  
   
   
   
@@ -132,19 +140,44 @@ export default function App() {
   //     },
   //   ],
   // };
+  // const data = {
+  //   labels: Array.from({ length: Sn.length }, (_, i) => i + 1), // Always S₁ to S_N
+  //   // datasets: [
+  //   //   {
+  //   //     label: "Partial Sum Sₙ",
+  //   //     data: Sn,
+  //   //     borderColor: "blue",
+  //   //     backgroundColor: "rgba(0, 0, 255, 0.3)",
+  //   //     fill: false,
+  //   //     tension: 0.1,
+  //   //   },
+  //   // ],
+  //   datasets: [
+  //     {
+  //       label: "Partial Sum Sₙ",
+  //       data: Sn,
+  //       borderColor: "blue",
+  //       backgroundColor: "rgba(0, 0, 255, 0.3)",  // This makes the legend box filled
+  //       fill: false, // Keeps the area under the line from being shaded
+  //       tension: 0,
+  //     },
+  //   ],    
+  // };
   const data = {
-    labels: Array.from({ length: Sn.length }, (_, i) => i + 1), // Always S₁ to S_N
+    labels: Array.from({ length: Sn.length }, (_, i) => i + 1),
     datasets: [
       {
         label: "Partial Sum Sₙ",
         data: Sn,
-        borderColor: "blue",
-        backgroundColor: "rgba(0, 0, 255, 0.3)",
-        fill: false,
-        tension: 0.1,
+        borderColor: "red",
+        backgroundColor: "blue",      // For point color
+        pointRadius: 2,               // Size of each dot
+        pointStyle: "circle",         // Style of dot
+        showLine: false,              // ✅ Removes connecting line
       },
     ],
   };
+  
   
 
   
