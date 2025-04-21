@@ -27,6 +27,9 @@ import {
 
 
 import { evaluate } from "mathjs";
+import 'katex/dist/katex.min.css';
+import { BlockMath } from 'react-katex';
+
 
 
 // ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
@@ -180,19 +183,81 @@ export default function App() {
   
   
 
+  function toLatexCompatible(expr) {
+    // Convert (-1)^n => (-1)^{n}
+    let fixed = expr.replace(/\(-1\)\^n/g, "(-1)^{n}");
+  
+    // Convert simple x^y → x^{y} (excluding ones already inside braces)
+    fixed = fixed.replace(/(\w)\^(\w)/g, "$1^{$2}");
+  
+    // If the expression matches the pattern (-1)^n/n exactly, use \frac
+    if (/^\(-1\)\^n\/n$/.test(expr)) {
+      fixed = `\\frac{(-1)^n}{n}`;
+    }
+  
+    return fixed;
+  }
   
 
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h2 className="text-xl font-semibold mb-4">Series Visualizer</h2>
-      <div className="mb-2">
+      {/* <div className="mb-2">
         <label className="block">aₙ = </label>
         <input
           className="border p-2 w-full"
           value={an}
           onChange={(e) => setAn(e.target.value)}
         />
+      </div> */}
+      {/* <div className="mb-2">
+        <label className="block font-semibold mb-1">
+          aₙ =
+        </label>
+        <input
+          type="text"
+          className="border p-2 w-full rounded"
+          value={an}
+          onChange={(e) => setAn(e.target.value)}
+          placeholder="e.g. (-1)^n/n"
+        />
+        <l className="text-sm text-gray-600 mt-1">
+          (Use <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n), and <code>exp(n)</code> for eⁿ)
+        </l>
+      </div> */}
+
+      <div className="mb-2">
+        <label className="block font-semibold mb-1">
+          aₙ =
+        </label>
+        <input
+          type="text"
+          className="border p-2 w-full rounded"
+          value={an}
+          onChange={(e) => setAn(e.target.value)}
+          placeholder="e.g. ((-1)^n)/n"
+        />
+        <span className="text-sm text-gray-600 mt-1 block">
+          (Use <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n), and <code>exp(n)</code> for eⁿ.
+          Use extra parentheses like <code>((-1)^n)/n</code> to ensure correct rendering.)
+        </span>
       </div>
+
+
+
+
+      {/* <div className="mb-2">
+        <label className="block">aₙ = </label>
+        <input
+          className="border p-2 w-full"
+          value={an}
+          onChange={(e) => setAn(e.target.value)}
+        />
+        <small className="text-gray-600">
+          (type <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n), and <code>exp(n)</code> for eⁿ)
+        </small>
+      </div> */}
+
       <div className="mb-2">
         <label className="block">Start Index:</label>
         <input
@@ -220,6 +285,61 @@ export default function App() {
 
       {Sn.length > 0 && (
         <div className="mt-6">
+          {/* <BlockMath math={`S = \\sum_{n = ${startIndex}}^\\infty ${an}`} /> */}
+          {/* <BlockMath math={
+            (() => {
+              let expr = an;
+
+              // If input includes (-1)^... pattern, format it properly
+              const signPattern = /\(-?1\)\^\(?([^)]+)\)?/;
+              const match = expr.match(signPattern);
+              if (match) {
+                const exponent = match[1];
+                // Use LaTeX exponent formatting
+                expr = expr.replace(signPattern, `(-1)^{${exponent}}`);
+              }
+
+              return `S = \\sum_{n = ${startIndex}}^\\infty ${expr}`;
+            })()
+          } /> */}
+
+        <BlockMath math={`S = \\sum_{n = ${startIndex}}^\\infty ${toLatexCompatible(an)}`} />
+
+
+          <BlockMath math={
+            `S_N = ` +
+            Array.from({ length: 3 }, (_, i) => {
+              const nVal = startIndex + i;
+
+              let modifiedExpr = an;
+              const signMatch = an.match(/\(-?1\)\^n/);
+              if (signMatch) {
+                const sign = Math.pow(-1, nVal);
+                modifiedExpr = modifiedExpr.replace(/\(-?1\)\^n/, sign.toString());
+              }
+
+              const substitutedExpr = modifiedExpr.replace(/n/g, `${nVal}`);
+              return `\\left(${substitutedExpr}\\right)`;
+            }).join(" + ") +
+            (() => {
+              const lastN = startIndex + N - 1;
+              let lastExpr = an;
+              const signMatch = an.match(/\(-?1\)\^n/);
+              if (signMatch) {
+                const sign = Math.pow(-1, lastN);
+                lastExpr = lastExpr.replace(/\(-?1\)\^n/, sign.toString());
+              }
+              lastExpr = lastExpr.replace(/n/g, `${lastN}`);
+              return ` + \\cdots + \\left(${lastExpr}\\right)`;
+            })()
+          } />
+
+
+
+
+
+
+          
           <Line data={data} options={options} />
           {finalSum !== null && (
             <div className="mt-4 text-lg">
