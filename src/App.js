@@ -7,13 +7,6 @@
 //It also displays the final partial sum after the computation is complete.
 import React, { useState } from "react";
 import { Line } from "react-chartjs-2";
-// import {
-//   Chart as ChartJS,
-//   LineElement,
-//   CategoryScale,
-//   LinearScale,
-//   PointElement,
-// } from "chart.js";
 import {
   Chart as ChartJS,
   LineElement,
@@ -26,7 +19,7 @@ import {
 } from "chart.js";
 
 
-import { evaluate } from "mathjs";
+import { evaluate, parse } from "mathjs";
 import 'katex/dist/katex.min.css';
 import { BlockMath } from 'react-katex';
 
@@ -50,27 +43,6 @@ export default function App() {
   const [endIndex, setEndIndex] = useState("infty");
   const [N, setN] = useState(1000);
   const [Sn, setSn] = useState([]);
-  // const options = {
-  //   responsive: true,
-  //   plugins: {
-  //     legend: {
-  //       display: true,
-  //       position: "top",
-  //       align: "end",
-  //       labels: {
-  //         font: {
-  //           size: 14,
-  //         },
-  //         usePointStyle: true,
-  //         pointStyle: "circle", // 👈 switch from square to circle
-  //       },
-  //     },
-  //     title: {
-  //       display: true,
-  //       text: "Partial Sums of the Series",
-  //     },
-  //   },
-  // };
   const options = {
     responsive: true,
     plugins: {
@@ -131,41 +103,6 @@ export default function App() {
     setSn(snValues);
   }
 
-  // const data = {
-  //   labels: Array.from({ length: Sn.length }, (_, i) => i),
-  //   datasets: [
-  //     {
-  //       label: "Partial Sum S_n",
-  //       data: Sn,
-  //       fill: false,
-  //       borderColor: "blue",
-  //       tension: 0.1,
-  //     },
-  //   ],
-  // };
-  // const data = {
-  //   labels: Array.from({ length: Sn.length }, (_, i) => i + 1), // Always S₁ to S_N
-  //   // datasets: [
-  //   //   {
-  //   //     label: "Partial Sum Sₙ",
-  //   //     data: Sn,
-  //   //     borderColor: "blue",
-  //   //     backgroundColor: "rgba(0, 0, 255, 0.3)",
-  //   //     fill: false,
-  //   //     tension: 0.1,
-  //   //   },
-  //   // ],
-  //   datasets: [
-  //     {
-  //       label: "Partial Sum Sₙ",
-  //       data: Sn,
-  //       borderColor: "blue",
-  //       backgroundColor: "rgba(0, 0, 255, 0.3)",  // This makes the legend box filled
-  //       fill: false, // Keeps the area under the line from being shaded
-  //       tension: 0,
-  //     },
-  //   ],    
-  // };
   const data = {
     labels: Array.from({ length: Sn.length }, (_, i) => i + 1),
     datasets: [
@@ -181,22 +118,29 @@ export default function App() {
     ],
   };
   
-  
 
   function toLatexCompatible(expr) {
-    // Convert (-1)^n => (-1)^{n}
-    let fixed = expr.replace(/\(-1\)\^n/g, "(-1)^{n}");
+    let fixed = expr;
   
-    // Convert simple x^y → x^{y} (excluding ones already inside braces)
-    fixed = fixed.replace(/(\w)\^(\w)/g, "$1^{$2}");
+    // Fix exponent formatting: (-1)^n or (-1)^(n+1) → (-1)^{n} or {n+1}
+    fixed = fixed.replace(/\(-1\)\^\(?([^)]+)\)?/g, (_, exp) => `(-1)^{${exp}}`);
   
-    // If the expression matches the pattern (-1)^n/n exactly, use \frac
-    if (/^\(-1\)\^n\/n$/.test(expr)) {
-      fixed = `\\frac{(-1)^n}{n}`;
+    // Fix general a^b → a^{b} (if not already done)
+    // fixed = fixed.replace(/([a-zA-Z0-9])\^([a-zA-Z0-9]+)/g, '$1^{$2}');
+    fixed = fixed.replace(/([a-zA-Z0-9]+)\^\(?([^)]+)\)?/g, (_, base, exponent) => {
+    return `${base}^{${exponent}}`;
+});
+
+  
+    // Wrap divisions into \frac if top-level form: expr/expr
+    if (/^[^\/]+\/[^\/]+$/.test(fixed)) {
+      const [num, denom] = fixed.split('/');
+      fixed = `\\frac{${num}}{${denom}}`;
     }
   
     return fixed;
   }
+  
   
 
   return (
@@ -243,21 +187,6 @@ export default function App() {
         </span>
       </div>
 
-
-
-
-      {/* <div className="mb-2">
-        <label className="block">aₙ = </label>
-        <input
-          className="border p-2 w-full"
-          value={an}
-          onChange={(e) => setAn(e.target.value)}
-        />
-        <small className="text-gray-600">
-          (type <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n), and <code>exp(n)</code> for eⁿ)
-        </small>
-      </div> */}
-
       <div className="mb-2">
         <label className="block">Start Index:</label>
         <input
@@ -303,36 +232,52 @@ export default function App() {
             })()
           } /> */}
 
-        <BlockMath math={`S = \\sum_{n = ${startIndex}}^\\infty ${toLatexCompatible(an)}`} />
+          <BlockMath math={`S = \\sum_{n = ${startIndex}}^\\infty ${toLatexCompatible(an)}`} />
 
 
-          <BlockMath math={
-            `S_N = ` +
-            Array.from({ length: 3 }, (_, i) => {
-              const nVal = startIndex + i;
+        <BlockMath math={
+          `S_N = ` +
+          Array.from({ length: 3 }, (_, i) => {
+            const nVal = startIndex + i;
 
-              let modifiedExpr = an;
-              const signMatch = an.match(/\(-?1\)\^n/);
-              if (signMatch) {
-                const sign = Math.pow(-1, nVal);
-                modifiedExpr = modifiedExpr.replace(/\(-?1\)\^n/, sign.toString());
-              }
+            let modified = an;
 
-              const substitutedExpr = modifiedExpr.replace(/n/g, `${nVal}`);
-              return `\\left(${substitutedExpr}\\right)`;
-            }).join(" + ") +
-            (() => {
-              const lastN = startIndex + N - 1;
-              let lastExpr = an;
-              const signMatch = an.match(/\(-?1\)\^n/);
-              if (signMatch) {
-                const sign = Math.pow(-1, lastN);
-                lastExpr = lastExpr.replace(/\(-?1\)\^n/, sign.toString());
-              }
-              lastExpr = lastExpr.replace(/n/g, `${lastN}`);
-              return ` + \\cdots + \\left(${lastExpr}\\right)`;
-            })()
-          } />
+            // Match and evaluate (-1)^(n), (-1)^(n+1), (-1)^(n-1)
+            const signMatch = modified.match(/\(-1\)\^\(?([^)]+)\)?/);
+            if (signMatch) {
+              // Replace `n` in the exponent and evaluate
+              const exponentStr = signMatch[1].replace(/n/g, `${nVal}`);
+              const signVal = Math.pow(-1, eval(exponentStr));  // safely eval n+1, n-1, etc.
+
+              // Replace only the full matched portion like (-1)^(n+1)
+              modified = modified.replace(signMatch[0], `${signVal}`);
+            }
+
+            // Now substitute remaining n's and convert to LaTeX
+            let substituted = modified.replace(/n/g, `${nVal}`);
+            substituted = toLatexCompatible(substituted);
+
+            return `\\left(${substituted}\\right)`;
+          }).join(" + ") +
+          (() => {
+            const lastN = startIndex + N - 1;
+
+            let lastTerm = an;
+
+            const signMatch = lastTerm.match(/\(-1\)\^\(?([^)]+)\)?/);
+            if (signMatch) {
+              const exponentStr = signMatch[1].replace(/n/g, `${lastN}`);
+              const signVal = Math.pow(-1, eval(exponentStr));
+              lastTerm = lastTerm.replace(signMatch[0], `${signVal}`);
+            }
+
+            lastTerm = lastTerm.replace(/n/g, `${lastN}`);
+            lastTerm = toLatexCompatible(lastTerm);
+
+            return ` + \\cdots + \\left(${lastTerm}\\right)`;
+          })()
+        } />
+
 
 
 
