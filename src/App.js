@@ -119,27 +119,76 @@ export default function App() {
   };
   
 
-  function toLatexCompatible(expr) {
-    let fixed = expr;
+//   function toLatexCompatible(expr) {
+//     let fixed = expr;
   
-    // Fix exponent formatting: (-1)^n or (-1)^(n+1) → (-1)^{n} or {n+1}
-    fixed = fixed.replace(/\(-1\)\^\(?([^)]+)\)?/g, (_, exp) => `(-1)^{${exp}}`);
+//     // Fix exponent formatting: (-1)^n or (-1)^(n+1) → (-1)^{n} or {n+1}
+//     fixed = fixed.replace(/\(-1\)\^\(?([^)]+)\)?/g, (_, exp) => `(-1)^{${exp}}`);
   
-    // Fix general a^b → a^{b} (if not already done)
-    // fixed = fixed.replace(/([a-zA-Z0-9])\^([a-zA-Z0-9]+)/g, '$1^{$2}');
-    fixed = fixed.replace(/([a-zA-Z0-9]+)\^\(?([^)]+)\)?/g, (_, base, exponent) => {
-    return `${base}^{${exponent}}`;
-});
+//     // Fix general a^b → a^{b} (if not already done)
+//     // fixed = fixed.replace(/([a-zA-Z0-9])\^([a-zA-Z0-9]+)/g, '$1^{$2}');
+//     fixed = fixed.replace(/([a-zA-Z0-9]+)\^\(?([^)]+)\)?/g, (_, base, exponent) => {
+//     return `${base}^{${exponent}}`;
+// });
 
   
-    // Wrap divisions into \frac if top-level form: expr/expr
-    if (/^[^\/]+\/[^\/]+$/.test(fixed)) {
-      const [num, denom] = fixed.split('/');
-      fixed = `\\frac{${num}}{${denom}}`;
-    }
+//     // Wrap divisions into \frac if top-level form: expr/expr
+//     if (/^[^\/]+\/[^\/]+$/.test(fixed)) {
+//       const [num, denom] = fixed.split('/');
+//       fixed = `\\frac{${num}}{${denom}}`;
+//     }
   
+//     return fixed;
+//   }
+
+  // function toLatexCompatible(expr) {
+  //   let fixed = expr;
+
+  //   // Step 1: Carefully replace (-1)^something with (-1)^{...}
+  //   fixed = fixed.replace(/\(-1\)\^\(([^()]+)\)/g, (_, exp) => `(-1)^{${exp}}`);
+  //   fixed = fixed.replace(/\(-1\)\^([a-zA-Z0-9]+)/g, (_, exp) => `(-1)^{${exp}}`);
+
+  //   // Step 2: Replace general powers a^b → a^{b}, only if not already handled
+  //   fixed = fixed.replace(/([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)/g, (_, base, exp) => {
+  //     return `${base}^{${exp}}`;
+  //   });
+
+  //   // // Step 3: Replace a/b → \frac{a}{b}
+  //   // fixed = fixed.replace(/([^{}\s^()]+)\/([^{}\s^()]+)/g, '\\frac{$1}{$2}');
+  //   fixed = fixed.replace(/((?:\([^\)]+\)|\{[^}]+\}|[^\/\s+])+?)\/([a-zA-Z0-9]+)/g, '\\frac{$1}{$2}');
+
+
+
+  //   return fixed;
+  // }
+
+  function toLatexCompatible(expr) {
+    let fixed = expr;
+
+    // ✅ STEP 1: Replace a/b → \frac{a}{b} (do first!)
+    // fixed = fixed.replace(/((?:\([^)]+\)|\{[^}]+\}|[^/\s+])+?)\/([a-zA-Z0-9^{}]+)/g, '\\frac{$1}{$2}');
+    fixed = fixed.replace(/(.+?)\/(\w+\([^)]*\)|\{[^}]+\}|[a-zA-Z0-9^{}]+)/g, '\\frac{$1}{$2}');
+
+
+    // ✅ STEP 2: Carefully replace (-1)^something with (-1)^{...}
+    fixed = fixed.replace(/\(-1\)\^\(([^()]+)\)/g, (_, exp) => `(-1)^{${exp}}`);
+    fixed = fixed.replace(/\(-1\)\^([a-zA-Z0-9]+)/g, (_, exp) => `(-1)^{${exp}}`);
+
+    // ✅ STEP 3: Replace general a^b → a^{b}
+    fixed = fixed.replace(/([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)/g, (_, base, exp) => {
+      return `${base}^{${exp}}`;
+    });
+
     return fixed;
   }
+
+
+
+
+
+
+
+
   
   
 
@@ -243,35 +292,40 @@ export default function App() {
             let modified = an;
 
             // Match and evaluate (-1)^(n), (-1)^(n+1), (-1)^(n-1)
-            const signMatch = modified.match(/\(-1\)\^\(?([^)]+)\)?/);
-            if (signMatch) {
-              // Replace `n` in the exponent and evaluate
-              const exponentStr = signMatch[1].replace(/n/g, `${nVal}`);
-              const signVal = Math.pow(-1, eval(exponentStr));  // safely eval n+1, n-1, etc.
+            // const signMatch = modified.match(/\(-1\)\^\(?([^)]+)\)?/);
+            
+            // if (signMatch) {
+            //   // Replace `n` in the exponent and evaluate
+            //   const exponentStr = signMatch[1].replace(/n/g, `${nVal}`);
+            //   const signVal = Math.pow(-1, eval(exponentStr));  // safely eval n+1, n-1, etc.
 
-              // Replace only the full matched portion like (-1)^(n+1)
-              modified = modified.replace(signMatch[0], `${signVal}`);
-            }
+            //   // Replace only the full matched portion like (-1)^(n+1)
+            //   modified = modified.replace(signMatch[0], `${signVal}`);
+            // }
 
             // Now substitute remaining n's and convert to LaTeX
-            let substituted = modified.replace(/n/g, `${nVal}`);
+            // let substituted = modified.replace(/n/g, `${nVal}`);
+            let substituted = modified.replace(/\bn\b/g, `${nVal}`);
+
             substituted = toLatexCompatible(substituted);
 
-            return `\\left(${substituted}\\right)`;
+            // return `\\left(${substituted}\\right)`;
+            return `${substituted}`;
+
           }).join(" + ") +
           (() => {
             const lastN = startIndex + N - 1;
 
             let lastTerm = an;
 
-            const signMatch = lastTerm.match(/\(-1\)\^\(?([^)]+)\)?/);
-            if (signMatch) {
-              const exponentStr = signMatch[1].replace(/n/g, `${lastN}`);
-              const signVal = Math.pow(-1, eval(exponentStr));
-              lastTerm = lastTerm.replace(signMatch[0], `${signVal}`);
-            }
+            // const signMatch = lastTerm.match(/\(-1\)\^\(?([^)]+)\)?/);
+            // if (signMatch) {
+            //   const exponentStr = signMatch[1].replace(/n/g, `${lastN}`);
+            //   const signVal = Math.pow(-1, eval(exponentStr));
+            //   lastTerm = lastTerm.replace(signMatch[0], `${signVal}`);
+            // }
 
-            lastTerm = lastTerm.replace(/n/g, `${lastN}`);
+            lastTerm = lastTerm.replace(/\bn\b/g, `${lastN}`);
             lastTerm = toLatexCompatible(lastTerm);
 
             return ` + \\cdots + \\left(${lastTerm}\\right)`;
