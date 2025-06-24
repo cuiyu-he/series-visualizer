@@ -175,9 +175,15 @@ export default function App() {
     fixed = fixed.replace(/\(-1\)\^([a-zA-Z0-9]+)/g, (_, exp) => `(-1)^{${exp}}`);
 
     // ✅ STEP 3: Replace general a^b → a^{b}
-    fixed = fixed.replace(/([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)/g, (_, base, exp) => {
+    // fixed = fixed.replace(/([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)/g, (_, base, exp) => {
+    //   return `${base}^{${exp}}`;
+    // });
+
+    // Replace any n^(...) or n^x with LaTeX-safe format
+    fixed = fixed.replace(/([a-zA-Z0-9]+)\^\(?([a-zA-Z0-9.+\-*/]+)\)?/g, (_, base, exp) => {
       return `${base}^{${exp}}`;
     });
+   
 
     return fixed;
   }
@@ -231,8 +237,10 @@ export default function App() {
           placeholder="e.g. ((-1)^n)/n"
         />
         <span className="text-sm text-gray-600 mt-1 block">
-          (Use <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n), and <code>exp(n)</code> for eⁿ.
-          Use extra parentheses like <code>((-1)^n)/n</code> to ensure correct rendering.)
+          (Use <code>log(n)</code> for ln(n), <code>log(2,n)</code> for log₂(n).
+           {/* and <code>exp(n)</code> for eⁿ. */}
+          {/* Use extra parentheses like <code>((-1)^n)/n</code> to ensure correct rendering. */}
+          )
         </span>
       </div>
 
